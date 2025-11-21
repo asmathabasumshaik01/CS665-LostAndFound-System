@@ -1,6 +1,10 @@
 {% include 'head.html'%}
 <div class="container mt-4">
+  {% if session['role']=='admin'%}
     <h3>All User Claims</h3>
+  {% else%}
+      <h3>My Claims</h3>
+  {% endif%}
 
     {% if claims %}
         <table class="table table-bordered mt-3">

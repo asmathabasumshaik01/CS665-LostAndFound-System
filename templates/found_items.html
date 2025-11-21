@@ -3,6 +3,7 @@
 <div class="container mt-5">
   <div class="row">
     <!-- Form Column -->
+     {% if session['role']=='user'%}
     <div class="col-4">
       <div class="card form-card p-4 mt-4">
         <div class="h3 text-center mb-3">Add Found Item</div>
@@ -36,7 +37,7 @@
         </form>
       </div>
     </div>
-
+{% endif%}
     <div class="col-7 mt-5">
   <div class="row">
     {% for item in found_items %}
@@ -53,12 +54,10 @@
             </div>
             <p class="description">{{ item[3] }}</p>
           </div>
-          {% if session['role']=='user'%}
           <div class="card-actions">
             <a href="/edit_found_item?found_item_id={{ item[0] }}" class="btn-info  p-2 ">Edit</a>
             <a href="/delete_found_item?found_item_id={{ item[0] }}" class="btn-danger p-2" >Delete</a>
           </div>
-          {% endif%}
         </div>
       </div>
     {% endfor %}
