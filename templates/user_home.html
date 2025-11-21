@@ -1,1 +1,65 @@
 {% include 'head.html' %}
+<div class="container mt-4">
+    <h3 class="mb-3">Matched Items Dashboard</h3>
+
+    <h4>Lost Items Matched</h4>
+    {% if matched_lost_items %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Description</th>
+                    <th>Lost Date</th>
+                    <th>Location</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in matched_lost_items %}
+                <tr>
+                    <td>{{ item[1] }}</td>
+                    <td>{{ item[2] }}</td>
+                    <td>{{ item[3] }}</td>
+                    <td>{{ item[4] }}</td>
+                     <td>
+                        <a href="/claim_lost_item?lost_item_id={{ item[0] }}" class="btn btn-success btn-sm">Claim</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No lost items matched yet.</p>
+    {% endif %}
+
+    <h4 class="mt-4">Found Items Matched</h4>
+    {% if matched_found_items %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Description</th>
+                    <th>Found Date</th>
+                    <th>Location</th>
+                     <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in matched_found_items %}
+                <tr>
+                    <td>{{ item[1] }}</td>
+                    <td>{{ item[2] }}</td>
+                    <td>{{ item[3] }}</td>
+                    <td>{{ item[4] }}</td>
+                     <td>
+                        <a href="/claim_found_item?found_item_id={{ item[0] }}" class="btn btn-success btn-sm">Claim</a>
+                    </td>
+
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No found items matched yet.</p>
+    {% endif %}
+</div>

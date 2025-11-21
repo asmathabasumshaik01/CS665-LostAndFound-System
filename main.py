@@ -72,8 +72,6 @@ def user_login_action():
 @app.route("/user_home")
 def user_home():
     user_id = session['user_id']
-
-    # Get lost items of user that are matched
     cursor.execute("""
            SELECT l.lost_item_id, l.item_name, l.description, l.lost_date, loc.location_name
            FROM Lost_Items l
@@ -82,8 +80,6 @@ def user_home():
            ORDER BY l.lost_item_id DESC
        """, (user_id,))
     matched_lost_items = cursor.fetchall()
-
-    # Get found items of user that are matched
     cursor.execute("""
            SELECT f.found_item_id, f.item_name, f.description, f.found_date, loc.location_name
            FROM Found_Items f
@@ -93,7 +89,7 @@ def user_home():
        """, (user_id,))
     matched_found_items = cursor.fetchall()
 
-    return render_template("user_matched_dashboard.html",
+    return render_template("user_home.html",
                            matched_lost_items=matched_lost_items,
                            matched_found_items=matched_found_items)
 
@@ -153,17 +149,6 @@ def found_items():
 
 
 
-#
-# @app.route("/add_found_item_action",methods=['post'])
-# def add_found_item_action():
-#     item_name = request.form.get("item_name")
-#     found_date = request.form.get("found_date")
-#     location_id = request.form.get("location_id")
-#     description = request.form.get("description")
-#     finder_id  = session['user_id']
-#     cursor.execute("insert into Found_Items (item_name,found_date,location_id,description,finder_id) values ('"+str(item_name)+"','"+str(found_date)+"','"+str(location_id)+"','"+str(description)+"','"+str(finder_id)+"')")
-#     conn.commit()
-#     return render_template("message.html",message="Found Item Added",color="alert primary")
 
 
 @app.route("/add_found_item_action", methods=['post'])
@@ -173,8 +158,6 @@ def add_found_item_action():
     location_id = request.form.get("location_id")
     description = request.form.get("description")
     finder_id = session['user_id']
-
-    # Insert found item
     cursor.execute("""
         INSERT INTO Found_Items (item_name, found_date, location_id, description, finder_id)
         VALUES (%s, %s, %s, %s, %s)
@@ -182,8 +165,6 @@ def add_found_item_action():
     conn.commit()
 
     found_item_id = cursor.lastrowid
-
-    # Check for matching lost items
     cursor.execute("""
         SELECT lost_item_id, item_name, lost_date, user_id
         FROM Lost_Items
@@ -210,16 +191,6 @@ def add_found_item_action():
     return render_template("message.html", message="Found Item Added.<br>" + match_info, color="alert-primary")
 
 
-# @app.route("/add_lost_item",methods=['post'])
-# def add_lost_item():
-#     item_name = request.form.get("item_name")
-#     lost_date = request.form.get("lost_date")
-#     location_id = request.form.get("location_id")
-#     description = request.form.get("description")
-#     user_id  = session['user_id']
-#     cursor.execute("insert into Lost_Items (item_name,lost_date,location_id,description,user_id) values ('"+str(item_name)+"','"+str(lost_date)+"','"+str(location_id)+"','"+str(description)+"','"+str(user_id)+"')")
-#     conn.commit()
-#     return render_template("message.html",message="Lost Item Added",color="alert primary")
 
 
 @app.route("/add_lost_item", methods=['post'])
@@ -229,8 +200,6 @@ def add_lost_item():
     location_id = request.form.get("location_id")
     description = request.form.get("description")
     user_id = session['user_id']
-
-    # Insert lost item
     cursor.execute("""
         INSERT INTO Lost_Items (item_name, lost_date, location_id, description, user_id)
         VALUES (%s, %s, %s, %s, %s)
@@ -238,8 +207,6 @@ def add_lost_item():
     conn.commit()
 
     lost_item_id = cursor.lastrowid
-
-    # Check for matching found items
     cursor.execute("""
         SELECT found_item_id, item_name, found_date, finder_id
         FROM Found_Items
@@ -253,7 +220,6 @@ def add_lost_item():
         found_item_id = match[0]
         finder_id = match[3]
 
-        # Update status to 'matched' for both lost and found item
         cursor.execute("""
             UPDATE Lost_Items SET status=%s WHERE lost_item_id=%s
         """, ("matched", lost_item_id))
@@ -333,6 +299,113 @@ def delete_found_item():
     cursor.execute("delete from Found_Items where found_item_id='"+str(found_item_id)+"'")
     conn.commit()
     return redirect("/found_items")
+
+@app.route("/claim_lost_item")
+def claim_lost_item():
+    lost_item_id = request.args.get("lost_item_id")
+    return render_template("claim_lost_item.html",lost_item_id=lost_item_id)
+
+@app.route("/claim_lost_item2")
+def claim_lost_item2():
+    user_id = session['user_id']
+    lost_item_id = request.args.get("lost_item_id")
+    claim_message = request.args.get("claim_message")
+    cursor.execute("""
+        SELECT * FROM Claims WHERE user_id=%s AND lost_item_id=%s AND claim_status='Pending'
+    """, (user_id, lost_item_id))
+    existing_claim = cursor.fetchone()
+    if existing_claim:
+        return render_template("message.html", message="You have already claimed this item.", color="alert-danger")
+
+    cursor.execute("""
+        SELECT found_item_id FROM Found_Items WHERE item_name IN (
+            SELECT item_name FROM Lost_Items WHERE lost_item_id=%s
+        ) AND status='Matched' LIMIT 1
+    """, (lost_item_id,))
+    found_item = cursor.fetchone()
+    if not found_item:
+        return render_template("message.html", message="No matching found item available.", color="alert-warning")
+
+    found_item_id = found_item[0]
+
+    cursor.execute("""
+        INSERT INTO Claims (user_id, lost_item_id, found_item_id, claim_status,claim_message)
+        VALUES (%s, %s, %s, 'Pending',%s)
+    """, (user_id, lost_item_id, found_item_id,claim_message))
+    conn.commit()
+
+    cursor.execute("UPDATE Lost_Items SET status='Claimed' WHERE lost_item_id=%s", (lost_item_id,))
+    cursor.execute("UPDATE Found_Items SET status='Claimed' WHERE found_item_id=%s", (found_item_id,))
+    conn.commit()
+
+    return render_template("message.html", message="Claim submitted successfully!", color="alert-success")
+
+
+@app.route("/claim_found_item")
+def claim_found_item():
+    found_item_id = request.args.get("found_item_id")
+    return render_template("claim_found_item.html",found_item_id=found_item_id)
+
+@app.route("/claim_found_item2")
+def claim_found_item2():
+    if 'user_id' not in session:
+        return redirect("/userLogin")
+
+    user_id = session['user_id']
+    found_item_id = request.args.get("found_item_id")
+    claim_message  =request.args.get("claim_message")
+    cursor.execute("""
+        SELECT * FROM Claims WHERE user_id=%s AND found_item_id=%s AND claim_status='Pending'
+    """, (user_id, found_item_id))
+    existing_claim = cursor.fetchone()
+    if existing_claim:
+        return render_template("message.html", message="You have already claimed this item.", color="alert-danger")
+
+    cursor.execute("""
+        SELECT lost_item_id FROM Lost_Items WHERE item_name IN (
+            SELECT item_name FROM Found_Items WHERE found_item_id=%s
+        ) AND status='Matched' LIMIT 1
+    """, (found_item_id,))
+    lost_item = cursor.fetchone()
+    if not lost_item:
+        return render_template("message.html", message="No matching lost item available.", color="alert-warning")
+
+    lost_item_id = lost_item[0]
+
+    # Insert claim
+    cursor.execute("""
+        INSERT INTO Claims (user_id, lost_item_id, found_item_id, claim_status,claim_message)
+        VALUES (%s, %s, %s, 'Pending',%s)
+    """, (user_id, lost_item_id, found_item_id,claim_message))
+    conn.commit()
+
+    cursor.execute("UPDATE Lost_Items SET status='Claimed' WHERE lost_item_id=%s", (lost_item_id,))
+    cursor.execute("UPDATE Found_Items SET status='Claimed' WHERE found_item_id=%s", (found_item_id,))
+    conn.commit()
+
+    return render_template("message.html", message="Claim submitted successfully!", color="alert-success")
+
+
+
+@app.route("/claimed_items")
+def claimed_items():
+    cursor.execute("""
+           SELECT c.claim_id, c.claim_status, c.verification_date, c.claim_message,
+                  u.name AS user_name, u.email AS user_email,
+                  l.item_name AS lost_item_name, l.lost_date, loc_l.location_name AS lost_location,
+                  f.item_name AS found_item_name, f.found_date, loc_f.location_name AS found_location
+           FROM Claims c
+           LEFT JOIN Users u ON c.user_id = u.user_id
+           LEFT JOIN Lost_Items l ON c.lost_item_id = l.lost_item_id
+           LEFT JOIN Locations loc_l ON l.location_id = loc_l.location_id
+           LEFT JOIN Found_Items f ON c.found_item_id = f.found_item_id
+           LEFT JOIN Locations loc_f ON f.location_id = loc_f.location_id
+           ORDER BY c.claim_id DESC
+       """)
+
+    claims = cursor.fetchall()
+    return render_template("claimed_items.html", claims=claims)
+
 
 
 

@@ -1,0 +1,56 @@
+{% include 'head.html'%}
+<div class="container mt-4">
+    <h3>All User Claims</h3>
+
+    {% if claims %}
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Claim ID</th>
+                    <th>User Name</th>
+                    <th>User Email</th>
+                    <th>Lost Item</th>
+                    <th>Lost Date</th>
+                    <th>Lost Location</th>
+                    <th>Found Item</th>
+                    <th>Found Date</th>
+                    <th>Found Location</th>
+                    <th>Status</th>
+                    <th>Verification Date</th>
+                    <th>Message</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in claims %}
+                <tr>
+                    <td>{{ c[0] }}</td>
+                    <td>{{ c[4] }}</td>
+                    <td>{{ c[5] }}</td>
+                    <td>{{ c[6] or 'N/A' }}</td>
+                    <td>{{ c[7] or 'N/A' }}</td>
+                    <td>{{ c[8] or 'N/A' }}</td>
+                    <td>{{ c[9] or 'N/A' }}</td>
+                    <td>{{ c[10] or 'N/A' }}</td>
+                    <td>{{ c[11] or 'N/A' }}</td>
+                    <td>{{ c[1] }}</td>
+                    <td>{{ c[2] or 'N/A' }}</td>
+                    <td>{{ c[3] or '' }}</td>
+                    <td>
+                      {% if session['role']=='admin'%}
+                        {% if c[1] == 'Pending' %}
+                            <a href="/approve_claim?claim_id={{ c[0] }}" class="btn btn-success btn-sm">Approve</a>
+                            <a href="/reject_claim?claim_id={{ c[0] }}" class="btn btn-danger btn-sm">Reject</a>
+                        {% else %}
+                            -
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No claims submitted yet.</p>
+    {% endif %}
+</div>
