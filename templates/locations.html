@@ -1,0 +1,51 @@
+{% include 'head.html' %}
+<div class="container-fluid mt-5">
+  <div class="row">
+    <div class="col-4">
+      <div class="card p-3 mt-4">
+        <form action="add_location_action" method="post">
+            <div class="form-group">
+                <label>Location Name</label>
+                <input class="form-control p-2" name="location_name" required placeholder="LocationName">
+             </div>
+
+            <div class="form-group">
+              <label>Building</label>
+              <input class="form-control p-2" name="building_name" placeholder="Building Name">
+            </div>
+
+          <div class="form-group">
+            <label>Room No</label>
+            <input class="form-control p-2" name="room_no" placeholder="Room Number">
+          </div>
+           <div class="form-group">
+            <label>Other Details</label>
+             <textarea class="form-control" name="details" placeholder="Enter.."></textarea>
+          </div>
+
+           <input type="submit" class="btn btn-primary" value="Add Location">
+        </form>
+      </div>
+    </div>
+        <div class="col-7 mt-5">
+          <table class="table table-bordered">
+             <thead>
+                <tr>
+                  <th>LocationName</th>
+                  <th>Building Name</th>
+                  <th>Room No</th>
+                </tr>
+             </thead>
+            <tbody>
+              {% for location in locations%}
+                <tr>
+                  <td>{{location[1]}}</td>
+                  <td>{{location[2]}}</td>
+                  <td>{{location[4]}}</td>
+                </tr>
+               {% endfor%}
+            </tbody>
+          </table>
+        </div>
+  </div>
+</div>
