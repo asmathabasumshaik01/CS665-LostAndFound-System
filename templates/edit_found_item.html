@@ -1,0 +1,40 @@
+{% include 'head.html' %}
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-4"></div>
+    <div class="col-4">
+      <div class="card form-card p-4 mt-4">
+        <div class="h3 text-center mb-3">Edit Found Item</div>
+        <form action="edit_found_item_action" method="post">
+          <input type="hidden" name="found_item_id" value="{{found_item_id}}">
+          <div class="form-group">
+            <label>Item Name</label>
+            <input type="text" class="form-control p-2" name="item_name" value="{{ Found_Item[2] }}" placeholder="Item Name">
+          </div>
+
+          <div class="form-group">
+            <label>Lost Date</label>
+            <input type="date" class="form-control p-2" name="found_date" value="{{ Found_Item[4] }}">
+          </div>
+
+          <div class="form-group">
+            <label>Location</label>
+            <select class="form-control mt-1 p-2" name="location_id">
+              <option value="">Choose Location</option>
+              {% for location in locations %}
+                <option value="{{ location[0] }}" {% if location[0] == Found_Item[5] %} selected {% endif %}>{{ location[1] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea class="form-control" name="description" placeholder="Enter Description..">{{ Found_Item[3] }}</textarea>
+          </div>
+          <input type="submit" class="btn btn-primary w-100" value="Update Found Item">
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

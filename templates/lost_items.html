@@ -1,0 +1,207 @@
+{% include 'head.html' %}
+
+<div class="container mt-5">
+  <div class="row">
+    <!-- Form Column -->
+    <div class="col-4">
+      <div class="card form-card p-4 mt-4">
+        <div class="h3 text-center mb-3">Add Lost Item</div>
+        <form action="add_lost_item" method="post">
+          <div class="form-group">
+            <label>Item Name</label>
+            <input type="text" class="form-control p-2" name="item_name" required placeholder="Item Name">
+          </div>
+
+          <div class="form-group">
+            <label>Lost Date</label>
+            <input type="date" class="form-control p-2" name="lost_date">
+          </div>
+
+          <div class="form-group">
+            <label>Location</label>
+            <select class="form-control mt-1 p-2" name="location_id">
+              <option value="">Choose Location</option>
+              {% for location in locations %}
+                <option value="{{ location[0] }}">{{ location[1] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea class="form-control" name="description" placeholder="Enter Description.."></textarea>
+          </div>
+
+          <input type="submit" class="btn btn-primary w-100" value="Add Lost Item">
+        </form>
+      </div>
+    </div>
+
+    <!-- Lost Items Column -->
+    <div class="col-7 mt-5">
+  <div class="row">
+    {% for item in lost_items %}
+      <div class="col-5 mb-4">
+        <div class="lost-item-card">
+          <div class="card-header">
+            <h5>{{ item[2] }}</h5>
+            <span class="badge status">{{ item[6] }}</span>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <p><i class="fa fa-calendar"></i> {{ item[4] }}</p>
+              <p><i class="fa fa-map-marker-alt"></i> {{ item[7] }}</p>
+            </div>
+            <p class="description">{{ item[3] }}</p>
+          </div>
+          {% if session['role']=='user'%}
+          <div class="card-actions">
+            <a href="/edit_lost_item?lost_item_id={{ item[0] }}" class="btn-info  p-2 ">Edit</a>
+            <a href="/delete_lost_item?lost_item_id={{ item[0] }}" class="btn-danger p-2" >Delete</a>
+          </div>
+          {% endif%}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+
+  </div>
+</div>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* Form card styling */
+.form-card {
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  background: linear-gradient(145deg, #ffffff, #f9fafb);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.form-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+}
+
+/* Lost Item Card Styling */
+.lost-item-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-left: 6px solid #2563eb;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.lost-item-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+}
+
+.lost-item-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.lost-item-card .card-header h5 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.lost-item-card .badge.status {
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.lost-item-card .card-body .info-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.lost-item-card .card-body .info-row p {
+  font-size: 0.9rem;
+  color: #475569;
+  margin: 0;
+}
+
+.lost-item-card .card-body .info-row i {
+  color: #2563eb;
+  margin-right: 4px;
+}
+
+.lost-item-card .description {
+  font-style: italic;
+  color: #334155;
+  margin-top: 6px;
+}
+
+/* Grid adjustments */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.col-6 {
+  flex: 0 0 50%;
+  max-width: 50%;
+}
+
+@media (max-width: 768px) {
+  .col-6, .col-4, .col-7 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  .mt-5 {
+    margin-top: 20px;
+  }
+}
+  .lost-item-card .card-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.lost-item-card .btn-sm {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.lost-item-card .btn-info {
+  background: linear-gradient(180deg,#06b6d4,#0e7490);
+  border: none;
+  color: white;
+}
+
+.lost-item-card .btn-info:hover {
+  background: #0c647a;
+}
+
+.lost-item-card .btn-danger {
+  background: linear-gradient(180deg,#ef4444,#b91c1c);
+  border: none;
+  color: white;
+}
+
+.lost-item-card .btn-danger:hover {
+  background: #7f1d1d;
+}
+
+</style>

@@ -14,7 +14,8 @@
 
       {% elif session.get('role')=='user' %}
         <a href="user_home">Dashboard</a>
-
+        <a href="/lost_items">Lost Items</a>
+      <a href="/found_items">Found Items</a>
         <a href="/logout" class="btn btn-ghost">Logout</a>
 
       {% else %}

@@ -98,5 +98,124 @@ def add_location_action():
     conn.commit()
     return redirect("/locations")
 
+@app.route("/lost_items")
+def lost_items():
+    cursor.execute("select * from Locations")
+    locations = cursor.fetchall()
+    cursor.execute("""
+           SELECT l.*, loc.location_name 
+           FROM Lost_Items l
+           JOIN Locations loc ON l.location_id = loc.location_id
+           ORDER BY l.lost_item_id DESC
+       """)
+    lost_items = cursor.fetchall()
+    return render_template("lost_items.html",locations=locations,lost_items=lost_items)
+
+
+
+@app.route("/found_items")
+def found_items():
+    cursor.execute("select * from Locations")
+    locations = cursor.fetchall()
+    cursor.execute("""
+           SELECT f.*, loc.location_name 
+           FROM Found_Items f
+           JOIN Locations loc ON f.location_id = loc.location_id
+           ORDER BY f.found_item_id DESC
+       """)
+    found_items = cursor.fetchall()
+    return render_template("found_items.html",locations=locations,found_items=found_items)
+
+
+
+
+
+@app.route("/add_found_item_action",methods=['post'])
+def add_found_item_action():
+    item_name = request.form.get("item_name")
+    found_date = request.form.get("found_date")
+    location_id = request.form.get("location_id")
+    description = request.form.get("description")
+    finder_id  = session['user_id']
+    cursor.execute("insert into Found_Items (item_name,found_date,location_id,description,finder_id) values ('"+str(item_name)+"','"+str(found_date)+"','"+str(location_id)+"','"+str(description)+"','"+str(finder_id)+"')")
+    conn.commit()
+    return render_template("message.html",message="Found Item Added",color="alert primary")
+
+
+@app.route("/add_lost_item",methods=['post'])
+def add_lost_item():
+    item_name = request.form.get("item_name")
+    lost_date = request.form.get("lost_date")
+    location_id = request.form.get("location_id")
+    description = request.form.get("description")
+    user_id  = session['user_id']
+    cursor.execute("insert into Lost_Items (item_name,lost_date,location_id,description,user_id) values ('"+str(item_name)+"','"+str(lost_date)+"','"+str(location_id)+"','"+str(description)+"','"+str(user_id)+"')")
+    conn.commit()
+    return render_template("message.html",message="Lost Item Added",color="alert primary")
+
+@app.route("/edit_lost_item")
+def edit_lost_item():
+    lost_item_id = request.args.get("lost_item_id")
+    cursor.execute("select * from Lost_Items where lost_item_id='"+str(lost_item_id)+"'")
+    Lost_Item = cursor.fetchone()
+    cursor.execute("select * from Locations")
+    locations = cursor.fetchall()
+    return render_template("edit_lost_item.html",Lost_Item=Lost_Item,locations=locations,lost_item_id=lost_item_id)
+
+
+
+
+@app.route("/edit_found_item")
+def edit_found_item():
+    found_item_id = request.args.get("found_item_id")
+    cursor.execute("select * from Found_Items where found_item_id='"+str(found_item_id)+"'")
+    Found_Item = cursor.fetchone()
+    cursor.execute("select * from Locations")
+    locations = cursor.fetchall()
+    return render_template("edit_found_item.html",Found_Item=Found_Item,locations=locations,found_item_id=found_item_id)
+
+
+
+
+@app.route("/edit_lost_item_action",methods=['post'])
+def edit_lost_item_action():
+    lost_item_id = request.form.get("lost_item_id")
+    item_name = request.form.get("item_name")
+    lost_date = request.form.get("lost_date")
+    location_id = request.form.get("location_id")
+    description = request.form.get("description")
+    cursor.execute("update Lost_Items set item_name='"+str(item_name)+"',lost_date='"+str(lost_date)+"',location_id='"+str(location_id)+"',description='"+str(description)+"' where lost_item_id='"+str(lost_item_id)+"'")
+    conn.commit()
+    return redirect("/lost_items")
+
+
+@app.route("/edit_found_item_action",methods=['post'])
+def edit_found_item_action():
+    found_item_id = request.form.get("found_item_id")
+    item_name = request.form.get("item_name")
+    found_date = request.form.get("found_date")
+    location_id = request.form.get("location_id")
+    description = request.form.get("description")
+    cursor.execute("update Found_Items set item_name='"+str(item_name)+"',found_date='"+str(found_date)+"',location_id='"+str(location_id)+"',description='"+str(description)+"' where found_item_id='"+str(found_item_id)+"'")
+    conn.commit()
+    return redirect("/found_items")
+
+
+@app.route("/delete_lost_item")
+def delete_lost_item():
+    lost_item_id = request.args.get("lost_item_id")
+    cursor.execute("delete from Lost_Items where lost_item_id='"+str(lost_item_id)+"'")
+    conn.commit()
+    return redirect("/lost_items")
+
+@app.route("/delete_found_item")
+def delete_found_item():
+    found_item_id = request.args.get("found_item_id")
+    cursor.execute("delete from Found_Items where found_item_id='"+str(found_item_id)+"'")
+    conn.commit()
+    return redirect("/found_items")
+
+
+
 
 app.run(debug=True)
