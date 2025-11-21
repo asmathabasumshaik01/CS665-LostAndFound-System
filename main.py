@@ -71,7 +71,31 @@ def user_login_action():
 
 @app.route("/user_home")
 def user_home():
-    return render_template("user_home.html")
+    user_id = session['user_id']
+
+    # Get lost items of user that are matched
+    cursor.execute("""
+           SELECT l.lost_item_id, l.item_name, l.description, l.lost_date, loc.location_name
+           FROM Lost_Items l
+           JOIN Locations loc ON l.location_id = loc.location_id
+           WHERE l.user_id=%s AND l.status='Matched'
+           ORDER BY l.lost_item_id DESC
+       """, (user_id,))
+    matched_lost_items = cursor.fetchall()
+
+    # Get found items of user that are matched
+    cursor.execute("""
+           SELECT f.found_item_id, f.item_name, f.description, f.found_date, loc.location_name
+           FROM Found_Items f
+           JOIN Locations loc ON f.location_id = loc.location_id
+           WHERE f.finder_id=%s AND f.status='Matched'
+           ORDER BY f.found_item_id DESC
+       """, (user_id,))
+    matched_found_items = cursor.fetchall()
+
+    return render_template("user_matched_dashboard.html",
+                           matched_lost_items=matched_lost_items,
+                           matched_found_items=matched_found_items)
 
 
 @app.route("/admin_home")
@@ -129,29 +153,124 @@ def found_items():
 
 
 
+#
+# @app.route("/add_found_item_action",methods=['post'])
+# def add_found_item_action():
+#     item_name = request.form.get("item_name")
+#     found_date = request.form.get("found_date")
+#     location_id = request.form.get("location_id")
+#     description = request.form.get("description")
+#     finder_id  = session['user_id']
+#     cursor.execute("insert into Found_Items (item_name,found_date,location_id,description,finder_id) values ('"+str(item_name)+"','"+str(found_date)+"','"+str(location_id)+"','"+str(description)+"','"+str(finder_id)+"')")
+#     conn.commit()
+#     return render_template("message.html",message="Found Item Added",color="alert primary")
 
-@app.route("/add_found_item_action",methods=['post'])
+
+@app.route("/add_found_item_action", methods=['post'])
 def add_found_item_action():
     item_name = request.form.get("item_name")
     found_date = request.form.get("found_date")
     location_id = request.form.get("location_id")
     description = request.form.get("description")
-    finder_id  = session['user_id']
-    cursor.execute("insert into Found_Items (item_name,found_date,location_id,description,finder_id) values ('"+str(item_name)+"','"+str(found_date)+"','"+str(location_id)+"','"+str(description)+"','"+str(finder_id)+"')")
+    finder_id = session['user_id']
+
+    # Insert found item
+    cursor.execute("""
+        INSERT INTO Found_Items (item_name, found_date, location_id, description, finder_id)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (item_name, found_date, location_id, description, finder_id))
     conn.commit()
-    return render_template("message.html",message="Found Item Added",color="alert primary")
+
+    found_item_id = cursor.lastrowid
+
+    # Check for matching lost items
+    cursor.execute("""
+        SELECT lost_item_id, item_name, lost_date, user_id
+        FROM Lost_Items
+        WHERE location_id=%s AND item_name LIKE %s AND status='Lost'
+    """, (location_id, f"%{item_name}%"))
+    matches = cursor.fetchall()
+
+    match_info = ""
+
+    for match in matches:
+        lost_item_id = match[0]
+        user_id = match[3]
+
+        # Update status to 'matched' for both items
+        cursor.execute("UPDATE Found_Items SET status='matched' WHERE found_item_id=%s", (found_item_id,))
+        cursor.execute("UPDATE Lost_Items SET status='matched' WHERE lost_item_id=%s", (lost_item_id,))
+        conn.commit()
+
+        match_info += f"Match Found! Lost Item ID: {lost_item_id} (Owner ID: {user_id})<br>"
+
+    if not match_info:
+        match_info = "No matches found yet."
+
+    return render_template("message.html", message="Found Item Added.<br>" + match_info, color="alert-primary")
 
 
-@app.route("/add_lost_item",methods=['post'])
+# @app.route("/add_lost_item",methods=['post'])
+# def add_lost_item():
+#     item_name = request.form.get("item_name")
+#     lost_date = request.form.get("lost_date")
+#     location_id = request.form.get("location_id")
+#     description = request.form.get("description")
+#     user_id  = session['user_id']
+#     cursor.execute("insert into Lost_Items (item_name,lost_date,location_id,description,user_id) values ('"+str(item_name)+"','"+str(lost_date)+"','"+str(location_id)+"','"+str(description)+"','"+str(user_id)+"')")
+#     conn.commit()
+#     return render_template("message.html",message="Lost Item Added",color="alert primary")
+
+
+@app.route("/add_lost_item", methods=['post'])
 def add_lost_item():
     item_name = request.form.get("item_name")
     lost_date = request.form.get("lost_date")
     location_id = request.form.get("location_id")
     description = request.form.get("description")
-    user_id  = session['user_id']
-    cursor.execute("insert into Lost_Items (item_name,lost_date,location_id,description,user_id) values ('"+str(item_name)+"','"+str(lost_date)+"','"+str(location_id)+"','"+str(description)+"','"+str(user_id)+"')")
+    user_id = session['user_id']
+
+    # Insert lost item
+    cursor.execute("""
+        INSERT INTO Lost_Items (item_name, lost_date, location_id, description, user_id)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (item_name, lost_date, location_id, description, user_id))
     conn.commit()
-    return render_template("message.html",message="Lost Item Added",color="alert primary")
+
+    lost_item_id = cursor.lastrowid
+
+    # Check for matching found items
+    cursor.execute("""
+        SELECT found_item_id, item_name, found_date, finder_id
+        FROM Found_Items
+        WHERE location_id=%s AND item_name LIKE %s AND status='Found'
+    """, (location_id, f"%{item_name}%"))
+    matches = cursor.fetchall()
+
+    match_info = ""
+
+    for match in matches:
+        found_item_id = match[0]
+        finder_id = match[3]
+
+        # Update status to 'matched' for both lost and found item
+        cursor.execute("""
+            UPDATE Lost_Items SET status=%s WHERE lost_item_id=%s
+        """, ("matched", lost_item_id))
+        conn.commit()
+        cursor.execute("""
+                   UPDATE Found_Items SET status=%s WHERE found_item_id=%s
+               """, ("matched", found_item_id))
+        conn.commit()
+        conn.commit()
+
+        match_info += f"Match Found! Found Item ID: {found_item_id} (Finder ID: {finder_id})<br>"
+
+    if not match_info:
+        match_info = "No matches found yet."
+
+    return render_template("message.html", message="Lost Item Added.<br>" + match_info, color="alert-primary")
+
 
 @app.route("/edit_lost_item")
 def edit_lost_item():
