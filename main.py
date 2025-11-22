@@ -327,4 +327,24 @@ def reject_claim():
         conn.commit()
     return redirect("/claimed_items")
 
+
+@app.route("/dashboard_data")
+def dashboard_data():
+    cursor.execute("""
+        SELECT loc.location_name, COUNT(*) AS lost_count
+        FROM Lost_Items l
+        JOIN Locations loc ON l.location_id = loc.location_id
+        GROUP BY loc.location_name
+        ORDER BY lost_count DESC
+        LIMIT 5
+    """)
+    top_locations = cursor.fetchall()
+
+    # Prepare data for Chart.js
+    labels = [row[0] for row in top_locations]
+    counts = [row[1] for row in top_locations]
+
+    return {"labels": labels, "counts": counts}
+
+
 app.run(debug=True)

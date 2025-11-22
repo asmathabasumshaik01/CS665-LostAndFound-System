@@ -1,1 +1,40 @@
 {% include 'head.html'%}
+<html>
+<head>
+    <title>Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>Top 5 Locations for Lost Items</h2>
+    <canvas id="lostItemsChart" width="400" height="200"></canvas>
+
+    <script>
+        fetch("/dashboard_data")
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('lostItemsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Lost Items Count',
+                        data: data.counts,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
